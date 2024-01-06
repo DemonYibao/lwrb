@@ -96,15 +96,19 @@ typedef void (*lwrb_evt_fn)(struct lwrb* buff, lwrb_evt_type_t evt, lwrb_sz_t bp
 /**
  * \brief           Buffer structure
  */
-typedef struct lwrb {
+typedef struct lwrb 
+{
     uint8_t* buff;  /*!< Pointer to buffer data. Buffer is considered initialized when `buff != NULL` and `size > 0` */
     lwrb_sz_t size; /*!< Size of buffer data. Size of actual buffer is `1` byte less than value holds */
     lwrb_sz_atomic_t r; /*!< Next read pointer. Buffer is considered empty when `r == w` and full when `w == r - 1` */
     lwrb_sz_atomic_t w; /*!< Next write pointer. Buffer is considered empty when `r == w` and full when `w == r - 1` */
     lwrb_evt_fn evt_fn; /*!< Pointer to event callback function */
+    uint8_t is_dynamic;
 } lwrb_t;
 
 uint8_t lwrb_init(lwrb_t* buff, void* buffdata, lwrb_sz_t size);
+lwrb_t* lwrb_init_dynamic(lwrb_sz_t size);
+void lwrb_destory(lwrb_t* buff);
 uint8_t lwrb_is_ready(lwrb_t* buff);
 void lwrb_free(lwrb_t* buff);
 void lwrb_reset(lwrb_t* buff);

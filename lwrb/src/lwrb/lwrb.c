@@ -33,13 +33,15 @@
  */
 #include "lwrb/lwrb.h"
 
-/* Memory set and copy functions */
-#define BUF_MEMSET      memset
-#define BUF_MEMCPY      memcpy
+/* Memory malloc、set and copy functions */
+#define BUF_MEMSET       memset
+#define BUF_MEMCPY       memcpy
+#define BUF_MALLOC(size) malloc(size)
+#define BUF_FREE(buff)   free(buff)
 
-#define BUF_IS_VALID(b) ((b) != NULL && (b)->buff != NULL && (b)->size > 0)
-#define BUF_MIN(x, y)   ((x) < (y) ? (x) : (y))
-#define BUF_MAX(x, y)   ((x) > (y) ? (x) : (y))
+#define BUF_IS_VALID(b)  ((b) != NULL && (b)->buff != NULL && (b)->size > 0)
+#define BUF_MIN(x, y)    ((x) < (y) ? (x) : (y))
+#define BUF_MAX(x, y)    ((x) > (y) ? (x) : (y))
 #define BUF_SEND_EVT(b, type, bp)                                                                                      \
     do {                                                                                                               \
         if ((b)->evt_fn != NULL) {                                                                                     \
@@ -77,7 +79,55 @@ lwrb_init(lwrb_t* buff, void* buffdata, lwrb_sz_t size) {
     buff->buff = buffdata;
     LWRB_INIT(buff->w, 0);
     LWRB_INIT(buff->r, 0);
+    LWRB_INIT(buff->is_dynamic, 0);
+
     return 1;
+}
+
+/**
+ * \brief           Initialize buffer handle to default values with size and dynamic buffer data array
+ * \param[in]       size: Size of `buffdata` in units of bytes
+ *                      Maximum number of bytes buffer can hold is `size - 1`
+ * \return          buffer pointer
+ */
+lwrb_t*
+lwrb_init_dynamic(lwrb_sz_t size) {
+    lwrb_t* fifo = NULL;
+
+    uint8_t* buffer = (uint8_t*)BUF_MALLOC(size);
+
+    if (NULL == buffer) {
+        return;
+    }
+
+    fifo = (uint8_t*)BUF_MALLOC(sizeof(lwrb_t));
+    if (NULL == fifo) {
+        BUF_FREE(buffer);
+        buff = NULL;
+    }
+
+    buff->evt_fn = NULL;
+    buff->size = size;
+    buff->buff = buffer;
+    LWRB_INIT(buff->w, 0);
+    LWRB_INIT(buff->r, 0);
+    LWRB_INIT(buff->is_dynamic, 1);
+
+    return fifo;
+}
+
+/**
+ * \brief           Free buffer handle 
+ * \return          N/A
+ */
+void
+lwrb_destory(lwrb_t* buff) {
+    if (0 == buff->is_dynamic) {
+        return;
+    }
+
+    BUF_FREE(buff->buff);
+    BUF_FREE(buff);
 }
 
 /**
